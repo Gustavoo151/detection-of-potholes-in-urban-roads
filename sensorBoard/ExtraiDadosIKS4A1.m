@@ -1,0 +1,142 @@
+%% Extrator de log de sensores STM32 por instância
+clear; clc;
+
+filename = 'sensor_log_20251013_165622.log'; % <<< nome do seu arquivo aqui
+
+%% Lê todas as linhas
+fid = fopen(filename, 'r');
+lines = {};
+tline = fgetl(fid);
+while ischar(tline)
+    lines{end+1} = tline; %#ok<SAGROW>
+    tline = fgetl(fid);
+end
+fclose(fid);
+
+%% Mantém apenas a última sequência completa
+end_indices = find(contains(lines, '__________________________________________________________________________'));
+if isempty(end_indices)
+    error('Não foi encontrada nenhuma linha de separador de sequência completa.');
+end
+lines = lines(1:end_indices(end)-1);
+
+%% Inicializa structs por sensor
+MAG = struct(); ACC = struct(); GYR = struct();
+TEMP = struct(); PRESS = struct(); HUM = struct();
+
+timestamp_pattern = '\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)';
+
+%% Processa cada linha
+for i = 1:length(lines)
+    line = strtrim(lines{i});
+    
+    % Extrai timestamp
+    ts_tokens = regexp(line, timestamp_pattern, 'tokens');
+    if isempty(ts_tokens), continue; end
+    ts_str = ts_tokens{1}{1};
+    ts_dn = datenum(ts_str, 'yyyy-mm-dd HH:MM:SS.FFF');
+    
+    %% MAG
+    mag_tokens = regexp(line, 'MAG_X\[(\d+)\]:\s*(-?\d+), MAG_Y\[\d+\]:\s*(-?\d+), MAG_Z\[\d+\]:\s*(-?\d+)', 'tokens');
+    if ~isempty(mag_tokens)
+        idx = str2double(mag_tokens{1}{1}) + 1;
+        if ~isfield(MAG, ['inst' num2str(idx)]), MAG.(['inst' num2str(idx)]).values = []; MAG.(['inst' num2str(idx)]).time = []; end
+        MAG.(['inst' num2str(idx)]).values(end+1,:) = str2double(mag_tokens{1}(2:4));
+        MAG.(['inst' num2str(idx)]).time(end+1) = ts_dn;
+    end
+    
+    %% ACC
+    acc_tokens = regexp(line, 'ACC_X\[(\d+)\]:\s*(-?\d+), ACC_Y\[\d+\]:\s*(-?\d+), ACC_Z\[\d+\]:\s*(-?\d+)', 'tokens');
+    if ~isempty(acc_tokens)
+        idx = str2double(acc_tokens{1}{1}) + 1;
+        if ~isfield(ACC, ['inst' num2str(idx)]), ACC.(['inst' num2str(idx)]).values = []; ACC.(['inst' num2str(idx)]).time = []; end
+        ACC.(['inst' num2str(idx)]).values(end+1,:) = str2double(acc_tokens{1}(2:4));
+        ACC.(['inst' num2str(idx)]).time(end+1) = ts_dn;
+    end
+    
+    %% GYR
+    gyr_tokens = regexp(line, 'GYR_X\[(\d+)\]:\s*(-?\d+), GYR_Y\[\d+\]:\s*(-?\d+), GYR_Z\[\d+\]:\s*(-?\d+)', 'tokens');
+    if ~isempty(gyr_tokens)
+        idx = str2double(gyr_tokens{1}{1}) + 1;
+        if ~isfield(GYR, ['inst' num2str(idx)]), GYR.(['inst' num2str(idx)]).values = []; GYR.(['inst' num2str(idx)]).time = []; end
+        GYR.(['inst' num2str(idx)]).values(end+1,:) = str2double(gyr_tokens{1}(2:4));
+        GYR.(['inst' num2str(idx)]).time(end+1) = ts_dn;
+    end
+    
+    %% TEMP
+    temp_tokens = regexp(line, 'Temp\[(\d+)\]:\s*\+?(-?\d+\.?\d*) degC', 'tokens');
+    if ~isempty(temp_tokens)
+        idx = str2double(temp_tokens{1}{1}) + 1;
+        if ~isfield(TEMP, ['inst' num2str(idx)]), TEMP.(['inst' num2str(idx)]).values = []; TEMP.(['inst' num2str(idx)]).time = []; end
+        TEMP.(['inst' num2str(idx)]).values(end+1) = str2double(temp_tokens{1}{2});
+        TEMP.(['inst' num2str(idx)]).time(end+1) = ts_dn;
+    end
+    
+    %% PRESS
+    press_tokens = regexp(line, 'Press\[(\d+)\]:\s*(-?\d+\.?\d*) hPa', 'tokens');
+    if ~isempty(press_tokens)
+        idx = str2double(press_tokens{1}{1}) + 1;
+        if ~isfield(PRESS, ['inst' num2str(idx)]), PRESS.(['inst' num2str(idx)]).values = []; PRESS.(['inst' num2str(idx)]).time = []; end
+        PRESS.(['inst' num2str(idx)]).values(end+1) = str2double(press_tokens{1}{2});
+        PRESS.(['inst' num2str(idx)]).time(end+1) = ts_dn;
+    end
+    
+    %% HUM
+    hum_tokens = regexp(line, 'Hum\[(\d+)\]:\s*(-?\d+\.?\d*) %', 'tokens');
+    if ~isempty(hum_tokens)
+        idx = str2double(hum_tokens{1}{1}) + 1;
+        if ~isfield(HUM, ['inst' num2str(idx)]), HUM.(['inst' num2str(idx)]).values = []; HUM.(['inst' num2str(idx)]).time = []; end
+        HUM.(['inst' num2str(idx)]).values(end+1) = str2double(hum_tokens{1}{2});
+        HUM.(['inst' num2str(idx)]).time(end+1) = ts_dn;
+    end
+end
+
+%% Converte timestamps para tempo relativo (s)
+all_times = [];
+fields = fieldnames(MAG); for f = 1:length(fields), all_times = [all_times MAG.(fields{f}).time]; end
+fields = fieldnames(ACC); for f = 1:length(fields), all_times = [all_times ACC.(fields{f}).time]; end
+fields = fieldnames(GYR); for f = 1:length(fields), all_times = [all_times GYR.(fields{f}).time]; end
+fields = fieldnames(TEMP); for f = 1:length(fields), all_times = [all_times TEMP.(fields{f}).time]; end
+fields = fieldnames(PRESS); for f = 1:length(fields), all_times = [all_times PRESS.(fields{f}).time]; end
+fields = fieldnames(HUM); for f = 1:length(fields), all_times = [all_times HUM.(fields{f}).time]; end
+
+t0 = min(all_times);
+
+normalize_time = @(t) (t - t0) * 24*3600;
+
+fields = fieldnames(MAG); for f = 1:length(fields), MAG.(fields{f}).time = normalize_time(MAG.(fields{f}).time); end
+fields = fieldnames(ACC); for f = 1:length(fields), ACC.(fields{f}).time = normalize_time(ACC.(fields{f}).time); end
+fields = fieldnames(GYR); for f = 1:length(fields), GYR.(fields{f}).time = normalize_time(GYR.(fields{f}).time); end
+fields = fieldnames(TEMP); for f = 1:length(fields), TEMP.(fields{f}).time = normalize_time(TEMP.(fields{f}).time); end
+fields = fieldnames(PRESS); for f = 1:length(fields), PRESS.(fields{f}).time = normalize_time(PRESS.(fields{f}).time); end
+fields = fieldnames(HUM); for f = 1:length(fields), HUM.(fields{f}).time = normalize_time(HUM.(fields{f}).time); end
+
+%% Exemplo de plot para ACC[1]
+inst_name = 'inst2'; % ACC[1] corresponde a inst2 (índice+1)
+if isfield(ACC, inst_name)
+    figure;
+    plot(ACC.(inst_name).time, ACC.(inst_name).values);
+    title(['ACC[' num2str(1) ']']);
+    legend('X','Y','Z');
+    xlabel('Tempo [s]');
+end
+
+%% Exemplo de plot para ACC[2]
+inst_name = 'inst3'; % ACC[2]
+if isfield(ACC, inst_name)
+    figure;
+    plot(ACC.(inst_name).time, ACC.(inst_name).values);
+    title(['ACC[' num2str(2) ']']);
+    legend('X','Y','Z');
+    xlabel('Tempo [s]');
+end
+
+%% Exemplo de plot para Temp[1]
+inst_name = 'inst2'; % TEMP[1]
+if isfield(TEMP, inst_name)
+    figure;
+    plot(TEMP.(inst_name).time, TEMP.(inst_name).values);
+    title('TEMP[1]');
+    xlabel('Tempo [s]');
+    ylabel('°C');
+end
