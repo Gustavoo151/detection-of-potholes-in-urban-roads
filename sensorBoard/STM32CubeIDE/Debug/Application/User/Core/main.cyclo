@@ -1,0 +1,11 @@
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:82:5:main	1
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:135:6:SystemClock_Config	4
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:186:13:MX_CRC_Init	2
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:217:13:MX_RTC_Init	4
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:281:13:MX_SPI2_Init	2
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:320:13:MX_TIM2_Init	4
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:365:13:MX_TIM3_Init	4
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:410:13:MX_USART1_UART_Init	2
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:443:13:MX_DMA_Init	1
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:464:13:MX_GPIO_Init	1
+C:/Users/jpaul/Documents/STM/IKS4A1/Sensor_Board_Dataset/Core/Src/main.c:487:6:Error_Handler	1
